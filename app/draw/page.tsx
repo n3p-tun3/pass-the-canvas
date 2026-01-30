@@ -19,6 +19,11 @@ type DrawingState = {
   expiresAt: string | null;
 };
 
+type NeighborSeed = {
+  imageData: string;
+  side: "left" | "right" | "top" | "bottom";
+};
+
 const getUserId = () => {
   if (typeof window === "undefined") return "";
   const existing = window.localStorage.getItem("ptc-user-id");
@@ -94,16 +99,9 @@ export default function DrawPage() {
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   };
 
-  const applySeed = async (seedImage: string | null, side: DrawingState["side"]) => {
+  const applySeeds = async (seeds: NeighborSeed[]) => {
     resetCanvas();
-    if (!seedImage || !side) return;
-
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("Failed to load seed image"));
-      img.src = seedImage;
-    });
+    if (seeds.length === 0) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -113,38 +111,92 @@ export default function DrawPage() {
     const sliceWidth = Math.round(CANVAS_WIDTH * SLICE_RATIO);
     const sliceHeight = Math.round(CANVAS_HEIGHT * SLICE_RATIO);
 
-    if (side === "right") {
-      ctx.drawImage(
-        img,
-        CANVAS_WIDTH - sliceWidth,
-        0,
-        sliceWidth,
-        CANVAS_HEIGHT,
-        0,
-        0,
-        sliceWidth,
-        CANVAS_HEIGHT
-      );
-    }
+    for (const seed of seeds) {
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Failed to load seed image"));
+        img.src = seed.imageData;
+      });
 
-    if (side === "bottom") {
-      ctx.drawImage(
-        img,
-        0,
-        CANVAS_HEIGHT - sliceHeight,
-        CANVAS_WIDTH,
-        sliceHeight,
-        0,
-        0,
-        CANVAS_WIDTH,
-        sliceHeight
-      );
+      if (seed.side === "left") {
+        ctx.drawImage(
+          img,
+          CANVAS_WIDTH - sliceWidth,
+          0,
+          sliceWidth,
+          CANVAS_HEIGHT,
+          0,
+          0,
+          sliceWidth,
+          CANVAS_HEIGHT
+        );
+      }
+
+      if (seed.side === "right") {
+        ctx.drawImage(
+          img,
+          0,
+          0,
+          sliceWidth,
+          CANVAS_HEIGHT,
+          CANVAS_WIDTH - sliceWidth,
+          0,
+          sliceWidth,
+          CANVAS_HEIGHT
+        );
+      }
+
+      if (seed.side === "top") {
+        ctx.drawImage(
+          img,
+          0,
+          CANVAS_HEIGHT - sliceHeight,
+          CANVAS_WIDTH,
+          sliceHeight,
+          0,
+          0,
+          CANVAS_WIDTH,
+          sliceHeight
+        );
+      }
+
+      if (seed.side === "bottom") {
+        ctx.drawImage(
+          img,
+          0,
+          0,
+          CANVAS_WIDTH,
+          sliceHeight,
+          0,
+          CANVAS_HEIGHT - sliceHeight,
+          CANVAS_WIDTH,
+          sliceHeight
+        );
+      }
     }
   };
 
-  useEffect(() => {
-    applySeed(drawingState.seedImage, drawingState.side).catch(() => undefined);
-  }, [drawingState.seedImage, drawingState.side]);
+  const loadNeighborSeeds = async (targetX: number, targetY: number) => {
+    if (!boardId) return [] as NeighborSeed[];
+    const response = await fetch(`/api/board?boardId=${boardId}`, { cache: "no-store" });
+    const data = await response.json();
+    if (!response.ok) return [] as NeighborSeed[];
+    const tiles = data.tiles as Array<{ x: number; y: number; imageData: string }>;
+    const seeds: NeighborSeed[] = [];
+
+    const left = tiles.find((tile) => tile.x === targetX - 1 && tile.y === targetY);
+    const right = tiles.find((tile) => tile.x === targetX + 1 && tile.y === targetY);
+    const top = tiles.find((tile) => tile.x === targetX && tile.y === targetY - 1);
+    const bottom = tiles.find((tile) => tile.x === targetX && tile.y === targetY + 1);
+
+    if (left) seeds.push({ imageData: left.imageData, side: "left" });
+    if (right) seeds.push({ imageData: right.imageData, side: "right" });
+    if (top) seeds.push({ imageData: top.imageData, side: "top" });
+    if (bottom) seeds.push({ imageData: bottom.imageData, side: "bottom" });
+
+    return seeds;
+  };
 
   useEffect(() => {
     if (isFirst) {
@@ -184,6 +236,9 @@ export default function DrawPage() {
           seedImage: data.fromTile.imageData,
           expiresAt: data.lock.expiresAt,
         });
+        loadNeighborSeeds(data.lock.x, data.lock.y)
+          .then((seeds) => applySeeds(seeds))
+          .catch(() => undefined);
       })
       .catch((err) => {
         if (!isActive) return;

@@ -6,13 +6,18 @@ const BOARD_SIZE = 5;
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const db = await getDb();
   const boards = db.collection("boards");
   const tiles = db.collection("tiles");
   const locks = db.collection("locks");
 
-  let board = await boards.findOne({ active: true });
+  const { searchParams } = new URL(request.url);
+  const boardId = searchParams.get("boardId");
+
+  let board = boardId
+    ? await boards.findOne({ _id: new ObjectId(boardId) })
+    : await boards.findOne({ active: true });
   if (!board) {
     const result = await boards.insertOne({
       size: BOARD_SIZE,
