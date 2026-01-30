@@ -24,6 +24,15 @@ type NeighborSeed = {
   side: "left" | "right" | "top" | "bottom";
 };
 
+type Tool = "marker" | "eraser";
+type Size = "small" | "medium" | "large";
+
+const sizeMap: Record<Size, number> = {
+  small: 2,
+  medium: 5,
+  large: 9,
+};
+
 const getUserId = () => {
   if (typeof window === "undefined") return "";
   const existing = window.localStorage.getItem("ptc-user-id");
@@ -42,6 +51,9 @@ export default function DrawPage() {
   const [userId, setUserId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isSeedLoading, setIsSeedLoading] = useState(false);
+  const [activeTool, setActiveTool] = useState<Tool>("marker");
+  const [activeSize, setActiveSize] = useState<Size>("medium");
+  const [activeColor, setActiveColor] = useState("#111827");
   const [drawingState, setDrawingState] = useState<DrawingState>({
     lockId: null,
     targetX: 0,
@@ -312,6 +324,14 @@ export default function DrawPage() {
       lastPointRef.current = nextPoint;
       return;
     }
+    ctx.lineWidth = sizeMap[activeSize];
+    if (activeTool === "eraser") {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.strokeStyle = "rgba(0,0,0,1)";
+    } else {
+      ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = activeColor;
+    }
     ctx.beginPath();
     ctx.moveTo(lastPoint.x, lastPoint.y);
     ctx.lineTo(nextPoint.x, nextPoint.y);
@@ -399,7 +419,14 @@ export default function DrawPage() {
             )}
           </div>
           <div className="mt-4">
-            <PaintToolbar />
+            <PaintToolbar
+              activeTool={activeTool}
+              activeSize={activeSize}
+              color={activeColor}
+              onToolChangeAction={setActiveTool}
+              onSizeChangeAction={setActiveSize}
+              onColorChangeAction={setActiveColor}
+            />
           </div>
         </section>
 
