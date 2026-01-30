@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
+import { isAdminSession } from "@/lib/admin";
 
 const TILE_WIDTH = 560;
 const TILE_HEIGHT = 360;
@@ -9,6 +10,11 @@ const OVERLAP_RATIO = 0.1;
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const isAdmin = await isAdminSession();
+  if (!isAdmin) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const boardId = searchParams.get("boardId");
 

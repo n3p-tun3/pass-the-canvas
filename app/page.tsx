@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import BoardMap from "@/app/components/BoardMap";
 import type { OpenTarget } from "@/app/components/BoardMap";
 
@@ -50,6 +50,8 @@ type TargetGroup = {
 
 export default function Home() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const boardIdParam = searchParams.get("boardId");
   const [boardState, setBoardState] = useState<BoardState>({
     boardId: null,
     size: 5,
@@ -60,7 +62,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchBoard = async () => {
-    const response = await fetch("/api/board", { cache: "no-store" });
+    const url = boardIdParam ? `/api/board?boardId=${boardIdParam}` : "/api/board";
+    const response = await fetch(url, { cache: "no-store" });
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data?.error ?? "Failed to load board");
@@ -76,7 +79,7 @@ export default function Home() {
 
   useEffect(() => {
     fetchBoard().catch((err) => setError(err.message));
-  }, []);
+  }, [boardIdParam]);
 
   useEffect(() => {
     if (!boardState.boardId) return;
@@ -85,7 +88,7 @@ export default function Home() {
       fetchBoard().catch(() => undefined);
     };
     return () => source.close();
-  }, [boardState.boardId]);
+  }, [boardState.boardId, boardIdParam]);
 
   const moves = useMemo<MoveOption[]>(() => {
     if (boardState.tiles.length === 0) return [];

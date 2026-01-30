@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import { emitBoardUpdate } from "@/lib/events";
+import { isAdminSession } from "@/lib/admin";
 
 const TILE_WIDTH = 560;
 const TILE_HEIGHT = 360;
@@ -19,6 +20,11 @@ const makeSvgDataUrl = (label: string, color: string) => {
 };
 
 export async function POST(request: Request) {
+  const isAdmin = await isAdminSession();
+  if (!isAdmin) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const body = await request.json();
   const { boardId, replace = false, fillAll = true } = body ?? {};
 
