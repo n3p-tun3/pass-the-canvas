@@ -24,7 +24,7 @@ type BoardMapProps = {
   tiles: BoardTile[];
   locks: BoardLock[];
   openTargets: OpenTarget[];
-  onSelectOpen?: (target: OpenTarget) => void;
+  onSelectOpenAction?: (target: OpenTarget) => void;
 };
 
 export default function BoardMap({
@@ -32,7 +32,7 @@ export default function BoardMap({
   tiles,
   locks,
   openTargets,
-  onSelectOpen,
+  onSelectOpenAction,
 }: BoardMapProps) {
   const openSet = new Set(openTargets.map((target) => target.key));
 
@@ -53,41 +53,41 @@ export default function BoardMap({
         const content = tile
           ? "Filled"
           : lock
-+          ? "Locked"
-+          : open
-+          ? "Open"
-+          : "";
-+
-+        const baseClass = tile
-+          ? "border-zinc-200 bg-zinc-900 text-white"
-+          : lock
-+          ? "border-amber-200 bg-amber-50 text-amber-700"
-+          : open
-+          ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-+          : "border-zinc-200 bg-zinc-50 text-zinc-400";
-+
-+        if (open && target && onSelectOpen) {
-+          return (
-+            <button
-+              key={key}
-+              type="button"
-+              onClick={() => onSelectOpen(target)}
-+              className={`flex aspect-square items-center justify-center rounded-lg border text-[10px] font-medium transition hover:border-indigo-400 ${baseClass}`}
-+            >
-+              {content}
-+            </button>
-+          );
-+        }
-+
-+        return (
-+          <div
-+            key={key}
-+            className={`flex aspect-square items-center justify-center rounded-lg border text-[10px] font-medium ${baseClass}`}
-+          >
-+            {content}
-+          </div>
-+        );
-+      })}
-+    </div>
-+  );
-+}
+          ? "Locked"
+          : open
+          ? "Open"
+          : "";
+
+        const baseClass = tile
+          ? "border-zinc-200 bg-zinc-900 text-white"
+          : lock
+          ? "border-amber-200 bg-amber-50 text-amber-700"
+          : open
+          ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+          : "border-zinc-200 bg-zinc-50 text-zinc-400";
+
+        if (open && target && onSelectOpenAction) {
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onSelectOpenAction(target)}
+              className={`flex aspect-square items-center justify-center rounded-lg border text-[10px] font-medium transition hover:border-indigo-400 ${baseClass}`}
+            >
+              {content}
+            </button>
+          );
+        }
+
+        return (
+          <div
+            key={key}
+            className={`flex aspect-square items-center justify-center rounded-lg border text-[10px] font-medium ${baseClass}`}
+          >
+            {content}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
