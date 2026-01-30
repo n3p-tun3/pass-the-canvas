@@ -36,7 +36,7 @@ export default function CanvasPanel({
         {headerAction}
       </div>
 
-      <div className="relative rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="relative inline-block rounded-2xl border border-zinc-200 bg-white shadow-sm">
         {!isActive && (
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-2xl bg-white/80 text-sm font-medium text-zinc-500">
             Choose an available tile to unlock the canvas
@@ -44,7 +44,7 @@ export default function CanvasPanel({
         )}
         <canvas
           ref={canvasRef}
-          className={`touch-none ${!isActive ? "pointer-events-none opacity-60" : ""}`}
+          className={`block touch-none ${!isActive ? "pointer-events-none opacity-60" : ""}`}
           onPointerDown={onPointerDownAction}
           onPointerMove={onPointerMoveAction}
           onPointerUp={onPointerUpAction}

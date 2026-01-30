@@ -41,6 +41,7 @@ export default function DrawPage() {
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const [userId, setUserId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [isSeedLoading, setIsSeedLoading] = useState(false);
   const [drawingState, setDrawingState] = useState<DrawingState>({
     lockId: null,
     targetX: 0,
@@ -200,6 +201,7 @@ export default function DrawPage() {
 
   useEffect(() => {
     if (isFirst) {
+      setIsSeedLoading(false);
       setDrawingState({
         lockId: null,
         targetX: 0,
@@ -228,6 +230,7 @@ export default function DrawPage() {
           setError(data.error);
           return;
         }
+        setIsSeedLoading(true);
         setDrawingState({
           lockId: data.lock.id,
           targetX: data.lock.x,
@@ -238,7 +241,8 @@ export default function DrawPage() {
         });
         loadNeighborSeeds(data.lock.x, data.lock.y)
           .then((seeds) => applySeeds(seeds))
-          .catch(() => undefined);
+          .catch(() => undefined)
+          .finally(() => setIsSeedLoading(false));
       })
       .catch((err) => {
         if (!isActive) return;
@@ -361,7 +365,7 @@ export default function DrawPage() {
     router.push("/");
   };
 
-  const isReady = isFirst || drawingState.lockId !== null;
+  const isReady = isFirst || (drawingState.lockId !== null && !isSeedLoading);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 py-12 text-zinc-900">
@@ -411,6 +415,13 @@ export default function DrawPage() {
           onPointerDownAction={handlePointerDown}
           onPointerMoveAction={handlePointerMove}
           onPointerUpAction={handlePointerUp}
+          headerAction={
+            isSeedLoading ? (
+              <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-500">
+                Loading edges...
+              </span>
+            ) : null
+          }
           footer={
             <div className="flex flex-wrap items-center justify-between gap-3">
               <button
